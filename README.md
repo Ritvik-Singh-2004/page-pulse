@@ -2,6 +2,9 @@
 
 A lightweight, intelligent web auditing tool built with Python (FastAPI) and standard HTML/JS. Page Pulse instantly audits any target URL for performance metrics, SEO vitals, and extracts top semantic keywords using a custom Natural Language Processing (NLP) pipeline.
 
+# Live Deployment Link
+https://page-pulse-3lmb.onrender.com
+
 ## 🚀 Setup & Running Locally
 
 1. **Clone the repository:**
