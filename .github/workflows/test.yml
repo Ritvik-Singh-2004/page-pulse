@@ -1,0 +1,33 @@
+name: Page Pulse CI
+
+# Trigger this workflow whenever code is pushed to the main branch
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Grab our code from the repository
+    - uses: actions/checkout@v4
+    
+    # 2. Set up the exact Python environment
+    - name: Set up Python 3.13
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.13"
+        
+    # 3. Install all our packages
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    # 4. Run the automated bouncer (Pytest)
+    - name: Test with pytest
+      run: |
+        pytest

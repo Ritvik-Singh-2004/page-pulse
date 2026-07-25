@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page Pulse - Web Auditor</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text: #f8fafc;
+            --accent: #38bdf8;
+            --error: #f87171;
+            --border: #334155;
+        }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        main {
+            flex: 1;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        h1 { color: var(--accent); margin-bottom: 8px; }
+        p.sub { color: #94a3b8; margin-bottom: 24px; }
+        .input-group { display: flex; gap: 10px; margin-bottom: 24px; }
+        input[type="text"] {
+            flex: 1;
+            padding: 12px 16px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--card-bg);
+            color: #fff;
+            font-size: 16px;
+        }
+        button {
+            padding: 12px 24px;
+            background: var(--accent);
+            color: #000;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+        .stat-box {
+            background: #0f172a;
+            padding: 16px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+        .stat-val { font-size: 20px; font-weight: bold; color: var(--accent); margin-top: 4px; }
+        .error { color: var(--error); background: #450a0a; border-color: #991b1b; }
+        .hidden { display: none; }
+        footer {
+            text-align: center;
+            padding: 20px;
+            border-top: 1px solid var(--border);
+            color: #64748b;
+        }
+        footer a { color: var(--accent); text-decoration: none; }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>Page Pulse</h1>
+        <p class="sub">Instant website performance & SEO diagnostic tool.</p>
+
+        <div class="input-group">
+            <input type="text" id="urlInput" placeholder="https://example.com" />
+            <button id="auditBtn" onclick="runAudit()">Audit URL</button>
+        </div>
+
+        <div id="loading" class="card hidden">Auditing webpage, please wait...</div>
+        <div id="errorCard" class="card error hidden"></div>
+
+        <div id="resultsCard" class="card hidden">
+            <h2>Audit Report</h2>
+            <p><strong id="resUrl"></strong></p>
+            
+            <div class="grid">
+                <div class="stat-box"><div>HTTP Status</div><div class="stat-val" id="resStatus">-</div></div>
+                <div class="stat-box"><div>Response Time</div><div class="stat-val" id="resTime">-</div></div>
+                <div class="stat-box">
+                    <div>Top Keywords</div>
+                    <div class="stat-val" id="resKeywords" style="font-size: 14px; margin-top: 8px;">-</div>
+                </div>
+                <div class="stat-box"><div>H1 Tags</div><div class="stat-val" id="resH1">-</div></div>
+                <div class="stat-box"><div>Missing Alt Images</div><div class="stat-val" id="resAlt">-</div></div>
+                <div class="stat-box"><div>Word Count</div><div class="stat-val" id="resWords">-</div></div>
+            </div>
+
+            <div style="margin-top:20px;">
+                <p><strong>Page Title:</strong> <span id="resTitle"></span></p>
+                <p><strong>Meta Description:</strong> <span id="resMeta"></span></p>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p><a href="https://digitalheroesco.com" target="_blank" rel="noopener noreferrer">Built for Digital Heroes Training Task</a></p>
+    </footer>
+
+    <script>
+        // Clear the input field automatically on page reload
+        document.addEventListener("DOMContentLoaded", () => {
+            document.getElementById('urlInput').value = '';
+        });
+
+        // Trigger audit on Enter key press
+        document.getElementById('urlInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                runAudit();
+            }
+        });
+
+        async function runAudit() {
+            const url = document.getElementById('urlInput').value.trim();
+            const btn = document.getElementById('auditBtn');
+            const loading = document.getElementById('loading');
+            const errorCard = document.getElementById('errorCard');
+            const resultsCard = document.getElementById('resultsCard');
+
+            errorCard.classList.add('hidden');
+            resultsCard.classList.add('hidden');
+
+            if (!url) {
+                showError("Please enter a URL.");
+                return;
+            }
+
+            btn.disabled = true;
+            loading.classList.remove('hidden');
+
+            try {
+                // We fetch the data from our backend
+                const res = await fetch(`/api/audit?url=${encodeURIComponent(url)}`);
+                
+                // HERE is where 'data' is officially born!
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(data.detail || "An unexpected error occurred.");
+                }
+
+                // Now we can safely map everything to the UI
+                document.getElementById('resUrl').innerText = data.url;
+                document.getElementById('resStatus').innerText = data.status_code;
+                document.getElementById('resTime').innerText = `${data.response_time_ms} ms`;
+                document.getElementById('resH1').innerText = data.metrics.h1_count;
+                document.getElementById('resAlt').innerText = data.metrics.missing_alt_images_count;
+                document.getElementById('resWords').innerText = data.metrics.word_count;
+                document.getElementById('resTitle').innerText = data.metrics.title;
+                document.getElementById('resMeta').innerText = data.metrics.meta_description;
+                
+                // 🌟 NLP Keywords mapping correctly placed AFTER 'data' exists
+                const keywords = Object.keys(data.metrics.top_keywords).join(", ");
+                document.getElementById('resKeywords').innerText = keywords || "None detected";
+
+                resultsCard.classList.remove('hidden');
+            } catch (err) {
+                showError(err.message);
+            } finally {
+                btn.disabled = false;
+                loading.classList.add('hidden');
+            }
+        }
+
+        function showError(msg) {
+            const errorCard = document.getElementById('errorCard');
+            errorCard.innerText = msg;
+            errorCard.classList.remove('hidden');
+        }
+
+    </script>
+</body>
+</html>
